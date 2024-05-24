@@ -11,15 +11,12 @@
 
 2. **CSV Format:**
    Ensure your CSV file is in the correct format. Use `test.csv` in the `resources` directory as an example:
-
+```csv
+marketId,factor,unitId
+18e16f50-639d-45a0-8f63-674ace882d4e,0.1234,f1b1b2ee-15c7-4d64-8643-01534b7633a5
+```
 3. **RSA Encryption:**
-- **Public Key:** Must be provided manually.
-- **Private Key:** Can be provided manually or retrieved from the Key Vault.
-
-4. **Azure Key Vault Configuration:**
-- **URL:** Specify the vault URL.
-- **Secret Name:** Provide the secret name.
-- Use browser credentials to authenticate. Ensure the user has appropriate roles to access the key.
+- **Public Key:** Must be provided manually. the public key is used to encrypt the data.
 
 5. **Execute the Tool:**
 ```sh
