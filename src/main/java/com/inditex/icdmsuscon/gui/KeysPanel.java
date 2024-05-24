@@ -1,32 +1,35 @@
 package com.inditex.icdmsuscon.gui;
 
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+
 import com.inditex.icdmsuscon.Constants;
-import com.inditex.icdmsuscon.az.AzureGetKeysService;
 import com.inditex.icdmsuscon.emissions.EmissionEncryptService;
 import com.inditex.icdmsuscon.emissions.security.CryptoConverter;
 import com.inditex.icdmsuscon.emissions.security.SecurityProperties;
+
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import lombok.extern.slf4j.Slf4j;
-
-import java.io.File;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 @Slf4j
 public class KeysPanel extends GridPane {
 
-    private PasswordField publicKeyInput;
-    private PasswordField privateKeyInput;
+    private TextField publicKeyInput;
     private TextField csvPathInput;
     private ToggleButton testKeysToggleButton;
-    private ToggleButton azureKeyToggleButton;
     private ProgressIndicator progressIndicator;
-    private AzureConfigPanel azureConfigPanel;
 
     private final ExecutorService executorService;
 
@@ -39,15 +42,8 @@ public class KeysPanel extends GridPane {
         GridPane subGrid = createSubGridPane();
         add(subGrid, 0, 0, 2, 1);
 
-        azureConfigPanel = new AzureConfigPanel();
-        azureConfigPanel.setVisible(false);
-        add(azureConfigPanel, 2, 0, 1, 3);
-
         HBox actionBox = createActionsBox();
         add(actionBox, 0, 3, 3, 1);
-        
-        
-        
     }
 
     private GridPane createSubGridPane() {
@@ -56,23 +52,12 @@ public class KeysPanel extends GridPane {
         subGrid.setVgap(8);
         subGrid.setHgap(10);
 
-        publicKeyInput = new PasswordField();
-        privateKeyInput = new PasswordField();
+        publicKeyInput = new TextField();
         csvPathInput = new TextField();
         csvPathInput.setEditable(false);
 
         subGrid.add(new Label("Public Key:"), 0, 0);
         subGrid.add(publicKeyInput, 1, 0);
-
-        subGrid.add(new Label("Private Key:"), 0, 1);
-        HBox privateKeyBox = new HBox(10);
-        privateKeyBox.getChildren().addAll(privateKeyInput);
-
-        azureKeyToggleButton = new ToggleButton("Get private key from Key Vault");
-        azureKeyToggleButton.setOnAction(e -> toggleKeyUsage(azureKeyToggleButton.isSelected()));
-        privateKeyBox.getChildren().add(azureKeyToggleButton);
-
-        subGrid.add(privateKeyBox, 1, 1);
 
         subGrid.add(new Label("CSV File:"), 0, 2);
         HBox csvPathBox = new HBox(10);
@@ -140,10 +125,9 @@ public class KeysPanel extends GridPane {
 
     private void executeAction() {
         String publicKey = publicKeyInput.getText();
-        String privateKey = privateKeyInput.getText();
         String csvFilePath = csvPathInput.getText();
         try {
-            List<String> insertStatements = generateInsertStrings(privateKey, publicKey, csvFilePath);
+            List<String> insertStatements = generateInsertStrings(publicKey, csvFilePath);
             if (!insertStatements.isEmpty()) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("Generated SQL -----------------------------\n");
@@ -159,52 +143,22 @@ public class KeysPanel extends GridPane {
         }
     }
 
-    private List<String> generateInsertStrings(String privateKey, String publicKey, String csvFilePath) throws Exception {
-        SecurityProperties securityProperties;
-        if (azureKeyToggleButton.isSelected()) {
-            AzureGetKeysService azureService = new AzureGetKeysService(azureConfigPanel.getKeyVaultUrl());
-            securityProperties = azureService.fetchKey(azureConfigPanel.getSecretName(), publicKey);
-        } else {
-            securityProperties = new SecurityProperties(List.of(privateKey), publicKey);
-        }
-
+    private List<String> generateInsertStrings(String publicKey, String csvFilePath) throws Exception {
+        SecurityProperties securityProperties = new SecurityProperties(Collections.emptyList(), publicKey);
         EmissionEncryptService service = new EmissionEncryptService(new CryptoConverter(securityProperties));
         return service.generateInsertStatements(csvFilePath);
-    }
-
-    void toggleKeyUsage(boolean azureSelected) {
-        privateKeyInput.setEditable(!azureSelected);
-        privateKeyInput.setDisable(azureSelected);
-        azureConfigPanel.setVisible(azureSelected);
-        testKeysToggleButton.setSelected(false);
-        testKeysToggleButton.setDisable(azureSelected);
-        azureKeyToggleButton.setSelected(azureSelected);
-
-        if (azureSelected) {
-            publicKeyInput.setText("");
-            privateKeyInput.setText("");
-            log.info("Using Azure keys");
-        } else {
-            publicKeyInput.setDisable(false);
-            publicKeyInput.setEditable(true);
-            log.info("Azure keys disabled");
-        }
     }
 
     private void toggleTestKeys() {
         boolean useTestKeys = testKeysToggleButton.isSelected();
         publicKeyInput.setEditable(!useTestKeys);
         publicKeyInput.setDisable(useTestKeys);
-        privateKeyInput.setEditable(!useTestKeys);
-        privateKeyInput.setDisable(useTestKeys);
 
         if (useTestKeys) {
             publicKeyInput.setText(Constants.TEST_PUBLIC_KEY);
-            privateKeyInput.setText(Constants.TEST_PRIVATE_KEY);
             log.info("Using test keys");
         } else {
             publicKeyInput.setText("");
-            privateKeyInput.setText("");
             log.info("Test keys disabled");
         }
     }

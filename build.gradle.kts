@@ -22,9 +22,6 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.4.7")
     implementation("com.opencsv:opencsv:5.5.2")
     implementation("org.openjfx:javafx-controls:17.0.2")
-    implementation("com.azure:azure-security-keyvault-keys:4.3.8")
-    implementation("com.azure:azure-identity:1.8.2")
-    implementation("com.azure:azure-security-keyvault-secrets:4.3.8")
 }
 
 configurations {

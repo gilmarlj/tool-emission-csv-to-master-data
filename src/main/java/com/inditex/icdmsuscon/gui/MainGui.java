@@ -55,7 +55,6 @@ public class MainGui extends Application {
             Platform.exit();
             System.exit(0);
         });
-        keysPanel.toggleKeyUsage(true);
     }
 
     private MenuBar createMenuBar() {
